@@ -1537,13 +1537,17 @@ static void prepare_bases(struct base_tree_info *bases,
 	clear_commit_base(&commit_base);
 }
 
-static void print_bases(struct base_tree_info *bases, FILE *file)
+static void print_bases(struct base_tree_info *bases, FILE *file, const char *prefix)
 {
 	int i;
+#define CMD_DESC_ARGC 3
+	const char *s[CMD_DESC_ARGC] = { "describe", "--exact-match", oid_to_hex(&bases->base_commit)};
 
 	/* Only do this once, either for the cover or for the first one */
 	if (is_null_oid(&bases->base_commit))
 		return;
+
+	i = cmd_describe(CMD_DESC_ARGC, s, prefix);
 
 	/* Show the base commit */
 	fprintf(file, "\nbase-commit: %s\n", oid_to_hex(&bases->base_commit));
@@ -2015,7 +2019,7 @@ int cmd_format_patch(int argc, const char **argv, const char *prefix)
 			gen_message_id(&rev, "cover");
 		make_cover_letter(&rev, use_stdout,
 				  origin, nr, list, branch_name, quiet);
-		print_bases(&bases, rev.diffopt.file);
+		print_bases(&bases, rev.diffopt.file, prefix);
 		print_signature(rev.diffopt.file);
 		total++;
 		start_number--;
@@ -2084,7 +2088,7 @@ int cmd_format_patch(int argc, const char **argv, const char *prefix)
 		if (!use_stdout)
 			rev.shown_one = 0;
 		if (shown) {
-			print_bases(&bases, rev.diffopt.file);
+			print_bases(&bases, rev.diffopt.file, prefix);
 			if (rev.mime_boundary)
 				fprintf(rev.diffopt.file, "\n--%s%s--\n\n\n",
 				       mime_boundary_leader,
